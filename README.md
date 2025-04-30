@@ -1,1 +1,0 @@
-"# KessokuBando6thKiboRPC" 
