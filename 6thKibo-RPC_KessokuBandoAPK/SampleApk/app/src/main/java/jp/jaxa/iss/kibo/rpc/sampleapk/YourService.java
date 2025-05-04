@@ -2,10 +2,15 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
+import java.util.ArrayList;
+import java.util.list;
+
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
 import org.opencv.core.Mat;
+import org.opencv.aruco.Dictionary;
+
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee.
@@ -23,7 +28,8 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, false);
 
         // Get a camera image.
-        Mat image = api.getMatNavCam();
+//        Mat image = api.getMatNavCam();
+//        saveMatImage(image, "Area1");
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -31,17 +37,18 @@ public class YourService extends KiboRpcService {
         /* ******************************************************************************** */
 
         // When you recognize landmark items, let’s set the type and number.
-        api.setAreaInfo(1, "item_name", 1);
+//        api.setAreaInfo(1, "item_name", 1);
 
         /* **************************************************** */
         /* Let's move to each area and recognize the items. */
         /* **************************************************** */
 
         // When you move to the front of the astronaut, report the rounding completion.
-        point = new Point(11.143d, -6.7607d, 4.9654d);
-        quaternion = new Quaternion(0f, 0f, 0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
-        api.reportRoundingCompletion();
+//        point = new Point(11.143d, -6.7607d, 4.9654d);
+//        quaternion = new Quaternion(0f, 0f, 0.707f, 0.707f);
+//        api.moveTo(point, quaternion, false);
+//        api.reportRoundingCompletion();
+
 
         /* ********************************************************** */
         /* Write your code to recognize which target item the astronaut has. */
@@ -69,7 +76,6 @@ public class YourService extends KiboRpcService {
     }
 
     // You can add your method.
-    private String yourMethod(){
-        return "your method";
+    private String processImage(Mat image) {
+//        Dictionary dictio
     }
-}
