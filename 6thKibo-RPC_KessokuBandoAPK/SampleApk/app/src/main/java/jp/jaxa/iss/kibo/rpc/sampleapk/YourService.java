@@ -10,6 +10,7 @@ import gov.nasa.arc.astrobee.types.Quaternion;
 
 import org.opencv.core.Mat;
 import org.opencv.aruco.Dictionary;
+import org.opencv.calib3d.Calib3d;
 
 
 /**
@@ -28,8 +29,8 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, false);
 
         // Get a camera image.
-//        Mat image = api.getMatNavCam();
-//        saveMatImage(image, "Area1");
+       Mat image = api.getMatNavCam();
+       saveMatImage(image, "Area1");
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -77,5 +78,27 @@ public class YourService extends KiboRpcService {
 
     // You can add your method.
     private String processImage(Mat image) {
-//        Dictionary dictio
+
+       // Detect ArUco tags in the image. 
+       Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
+       Mat ids = new Mat();
+       Mat corners = new Mat();
+       Aruco.detectMarkers(image, dictionary, corners, ids);
+
+       
+
+        //Get camera Matrix
+       Mat cameraMatrix = new mat(3, 3, CvType.CV_64F);
+       cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1]);
+
+       //get lens distortion parameters
+        Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);
+        cameraCoefficients.put(0, 0, api.getNavCamIntrinsics()[1]);
+        cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
+
+        // Undistort the image
+        Mat undistortedImage = new Mat();
+        Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
+
+        saveMatImage(undistortedImage, "_undistorted");
     }
