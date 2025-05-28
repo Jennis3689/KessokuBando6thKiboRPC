@@ -18,6 +18,9 @@ import org.opencv.calib3d.Calib3d;
  */
 
 public class YourService extends KiboRpcService {
+
+    private final boolean debugging = true;
+
     @Override
     protected void runPlan1(){
         // The mission starts.
@@ -29,8 +32,8 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, false);
 
         // Get a camera image.
-       Mat image = api.getMatNavCam();
-       saveMatImage(image, "Area1");
+        Mat image = api.getMatNavCam();
+        saveMatImage(image, "Area1");
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -80,18 +83,30 @@ public class YourService extends KiboRpcService {
     private String processImage(Mat image) {
 
        // Detect ArUco tags in the image. 
+       // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
        Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
+
        Mat ids = new Mat();
+
        Mat corners = new Mat();
+
+       /* This method will use the image and dictionary provided and
+       return a list called corners containing 4 x,y coordinates of the corners of the
+       Aruco tags, along with ids, a list of all Aruco Ids detected. */
+
        Aruco.detectMarkers(image, dictionary, corners, ids);
+
+        if (debugging){
+            drawMarkers(image, dictionary, corners, ids);
+        }
 
        
 
-        //Get camera Matrix
-       Mat cameraMatrix = new mat(3, 3, CvType.CV_64F);
-       cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1]);
+        // Get camera Matrix
+        Mat cameraMatrix = new mat(3, 3, CvType.CV_64F);
+        cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1]);
 
-       //get lens distortion parameters
+       // Get lens distortion parameters
         Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);
         cameraCoefficients.put(0, 0, api.getNavCamIntrinsics()[1]);
         cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
@@ -101,4 +116,12 @@ public class YourService extends KiboRpcService {
         Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
 
         saveMatImage(undistortedImage, "_undistorted");
+
+
+    }
+
+    private void drawMarkers(img, dict, corners, ids){
+        private static Mat arImage = new Mat();
+        drawDetectedMarkers(arImage, corners, ids);
+        saveMatImage(arImage, "ArucoImage");
     }
