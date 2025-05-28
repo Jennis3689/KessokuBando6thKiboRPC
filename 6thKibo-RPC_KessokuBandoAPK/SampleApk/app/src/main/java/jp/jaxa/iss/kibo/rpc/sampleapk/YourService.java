@@ -80,7 +80,7 @@ public class YourService extends KiboRpcService {
     }
 
     // You can add your method.
-    private String processImage(Mat image) {
+    private void processImage(Mat image) {
 
        // Detect ArUco tags in the image. 
        // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
