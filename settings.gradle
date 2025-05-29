@@ -1,5 +1,0 @@
-include ':build.gradle', ':guest_science_library', ':kibo_rpc_api', ':app'
-project(':build.gradle').projectDir = new File('6thKibo-RPC_KessokuBandoAPK/SampleApk/app/build.gradle')
-project(':guest_science_library').projectDir = new File('6thKibo-RPC_KessokuBandoAPK/SampleApk/guest_science_library')
-project(':kibo_rpc_api').projectDir = new File('6thKibo-RPC_KessokuBandoAPK/SampleApk/kibo_rpc_api')
-project(':app').projectDir = new File('6thKibo-RPC_KessokuBandoAPK/SampleApk/app')

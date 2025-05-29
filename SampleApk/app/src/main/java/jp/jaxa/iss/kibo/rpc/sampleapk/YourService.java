@@ -3,14 +3,19 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
 import java.util.ArrayList;
-import java.util.list;
+import java.util.List;
 
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
+import org.opencv.aruco.Aruco;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.aruco.Dictionary;
 import org.opencv.calib3d.Calib3d;
+
+
+import static org.opencv.aruco.Aruco.drawDetectedMarkers;
 
 
 /**
@@ -33,7 +38,7 @@ public class YourService extends KiboRpcService {
 
         // Get a camera image.
         Mat image = api.getMatNavCam();
-        saveMatImage(image, "Area1");
+        api.saveMatImage(image, "Area1");
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -71,7 +76,7 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan2(){
-       // write your plan 2 here.
+        // write your plan 2 here.
     }
 
     @Override
@@ -82,31 +87,31 @@ public class YourService extends KiboRpcService {
     // You can add your method.
     private void processImage(Mat image) {
 
-       // Detect ArUco tags in the image. 
-       // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
-       Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
+        // Detect ArUco tags in the image.
+        // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
+        Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
 
-       Mat ids = new Mat();
+        Mat ids = new Mat();
 
-       Mat corners = new Mat();
+        ArrayList<Mat> corners = new ArrayList<Mat>();
 
        /* This method will use the image and dictionary provided and
        return a list called corners containing 4 x,y coordinates of the corners of the
        Aruco tags, along with ids, a list of all Aruco Ids detected. */
 
-       Aruco.detectMarkers(image, dictionary, corners, ids);
+        Aruco.detectMarkers(image, dictionary, corners, ids);
 
         if (debugging){
             drawMarkers(image, dictionary, corners, ids);
         }
 
-       
+
 
         // Get camera Matrix
-        Mat cameraMatrix = new mat(3, 3, CvType.CV_64F);
-        cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1]);
+        Mat cameraMatrix = new Mat(3, 3, CvType.CV_64F);
+        cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1][1]);
 
-       // Get lens distortion parameters
+        // Get lens distortion parameters
         Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);
         cameraCoefficients.put(0, 0, api.getNavCamIntrinsics()[1]);
         cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
@@ -115,13 +120,15 @@ public class YourService extends KiboRpcService {
         Mat undistortedImage = new Mat();
         Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
 
-        saveMatImage(undistortedImage, "_undistorted");
+        api.saveMatImage(undistortedImage, "_undistorted");
 
 
     }
 
-    private void drawMarkers(img, dict, corners, ids){
-        private static Mat arImage = new Mat();
+    private void drawMarkers(Mat img, Dictionary dict, ArrayList<Mat> corners, Mat ids){
+        Mat arImage = new Mat();
         drawDetectedMarkers(arImage, corners, ids);
-        saveMatImage(arImage, "ArucoImage");
+        api.saveMatImage(arImage, "ArucoImage");
     }
+
+}
