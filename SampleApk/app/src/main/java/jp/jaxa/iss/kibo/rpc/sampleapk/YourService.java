@@ -5,6 +5,7 @@ import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
@@ -25,6 +26,7 @@ import static org.opencv.aruco.Aruco.drawDetectedMarkers;
 public class YourService extends KiboRpcService {
 
     private final boolean debugging = true;
+    private int areaNum = 0;
 
     @Override
     protected void runPlan1(){
@@ -37,9 +39,10 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, false);
 
         // Get a camera image.
-        Mat image = api.getMatNavCam();
-        api.saveMatImage(image, "Area1");
+        Mat area1 = api.getMatNavCam();
+        api.saveMatImage(area1, "Area1");
 
+        processImage(area1);
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
         /* If there is a treasure item, remember it.                                        */
@@ -85,7 +88,11 @@ public class YourService extends KiboRpcService {
     }
 
     // You can add your method.
+
     private void processImage(Mat image) {
+
+        System.out.println("Processing Image.... ");
+        areaNum += 1;
 
         // Detect ArUco tags in the image.
         // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
@@ -103,6 +110,7 @@ public class YourService extends KiboRpcService {
 
         if (debugging){
             drawMarkers(image, dictionary, corners, ids);
+            System.out.println("Uploading Image for Debugging... ");
         }
 
 
@@ -128,7 +136,7 @@ public class YourService extends KiboRpcService {
     private void drawMarkers(Mat img, Dictionary dict, ArrayList<Mat> corners, Mat ids){
         Mat arImage = new Mat();
         drawDetectedMarkers(arImage, corners, ids);
-        api.saveMatImage(arImage, "ArucoImage");
+        api.saveMatImage(arImage,  Integer.toString(areaNum));
     }
 
 }
