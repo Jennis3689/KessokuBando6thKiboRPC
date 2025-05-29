@@ -30,60 +30,63 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1(){
-        // The mission starts.
-        api.startMission();
 
-        // Move to a point.
-        Point point = new Point(10.9d, -9.92284d, 5.195d);
-        Quaternion quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
+            // The mission starts.
+            api.startMission();
 
-        // Get a camera image.
-        Mat area1 = api.getMatNavCam();
-        api.saveMatImage(area1, "Area1");
+            // Move to a point.
+            Point point = new Point(10.9d, -9.92284d, 5.195d);
+            Quaternion quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
+            api.moveTo(point, quaternion, false);
 
-        processImage(area1);
+            // Get a camera image.
+            Mat area1 = api.getMatNavCam();
+            api.saveMatImage(area1, "Area1");
 
-        point = new Point(10.42d, -10.58d, 4.82d);
-        quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
-        /* ******************************************************************************** */
-        /* Write your code  to recognize the type and number of landmark items in each area! */
-        /* If there is a treasure item, remember it.                                        */
-        /* ******************************************************************************** */
-        point = new Point(10.3d, -9.254d, 3.76203d);
-        quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
-        // When you recognize landmark items, let’s set the type and number.
-//        api.setAreaInfo(1, "item_name", 1);
-        point = new Point(10.3d, -8.4d, 3.76203d);
-        quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
-        /* **************************************************** */
-        /* Let's move to each area and recognize the items. */
-        /* **************************************************** */
+            processImage(area1);
 
-        // When you move to the front of the astronaut, report the rounding completion.
-        point = new Point(11.143d, -6.7607d, 4.9654d);
-        quaternion = new Quaternion(0f, 0f, 0.707f, 0.707f);
-        api.moveTo(point, quaternion, false);
+//            point = new Point(10.42d, -10.58d, 4.82d);
+//            quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
+//            api.moveTo(point, quaternion, false);
+//            /* ******************************************************************************** */
+//            /* Write your code  to recognize the type and number of landmark items in each area! */
+//            /* If there is a treasure item, remember it.                                        */
+//            /* ******************************************************************************** */
+//            point = new Point(10.3d, -9.254d, 3.76203d);
+//            quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
+//            api.moveTo(point, quaternion, false);
+//            // When you recognize landmark items, let’s set the type and number.
+////        api.setAreaInfo(1, "item_name", 1);
+//            point = new Point(10.3d, -8.4d, 3.76203d);
+//            quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
+//            api.moveTo(point, quaternion, false);
+//            /* **************************************************** */
+//            /* Let's move to each area and recognize the items. */
+//            /* **************************************************** */
+//
+            // When you move to the front of the astronaut, report the rounding completion.
+            point = new Point(11.143d, -6.7607d, 4.9654d);
+            quaternion = new Quaternion(0f, 0f, 0.707f, 0.707f);
+            api.moveTo(point, quaternion, false);
 
 
 
 
-        /* ********************************************************** */
-        /* Write your code to recognize which target item the astronaut has. */
-        /* ********************************************************** */
+            /* ********************************************************** */
+            /* Write your code to recognize which target item the astronaut has. */
+            /* ********************************************************** */
 
-        // Let's notify the astronaut when you recognize it.
-        api.notifyRecognitionItem();
+            // Let's notify the astronaut when you recognize it.
+            api.notifyRecognitionItem();
 
-        /* ******************************************************************************************************* */
-        /* Write your code to move Astrobee to the location of the target item (what the astronaut is looking for) */
-        /* ******************************************************************************************************* */
+            /* ******************************************************************************************************* */
+            /* Write your code to move Astrobee to the location of the target item (what the astronaut is looking for) */
+            /* ******************************************************************************************************* */
 
-        // Take a snapshot of the target item.
-        api.takeTargetItemSnapshot();
+            // Take a snapshot of the target item.
+            api.takeTargetItemSnapshot();
+
+
     }
 
     @Override
@@ -98,47 +101,62 @@ public class YourService extends KiboRpcService {
 
     // You can add your method.
 
+
     private void processImage(Mat image) {
 
-        System.out.println("Processing Image.... ");
-        areaNum += 1;
-
-        // Detect ArUco tags in the image.
-        // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
         Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
-
         Mat ids = new Mat();
-
         ArrayList<Mat> corners = new ArrayList<Mat>();
+
+        try {
+            System.out.println("Processing Image.... ");
+            areaNum += 1;
+
+            // Detect ArUco tags in the image.
+            // This dictionary is of 6 pixel by 6 pixel AR Tags with 250 unique tags
+
+
+
+
+
 
        /* This method will use the image and dictionary provided and
        return a list called corners containing 4 x,y coordinates of the corners of the
        Aruco tags, along with ids, a list of all Aruco Ids detected. */
 
-        Aruco.detectMarkers(image, dictionary, corners, ids);
+            Aruco.detectMarkers(image, dictionary, corners, ids);
+        } catch(Exception error){
+            System.out.println("There is an error before or at the detection of the Aruco tag.");
+        }
 
         if (debugging){
-            drawMarkers(image, dictionary, corners, ids);
-            System.out.println("Uploading Image for Debugging... ");
+            try {
+                drawMarkers(image, dictionary, corners, ids);
+                System.out.println("Uploading Image for Debugging... ");
+            } catch(Exception error) {
+                System.out.println("There is an error when drawing the marker");
+            }
         }
 
 
+        try {
+            // Get camera Matrix
+            Mat cameraMatrix = new Mat(3, 3, CvType.CV_64F);
+            cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1][1]);
 
-        // Get camera Matrix
-        Mat cameraMatrix = new Mat(3, 3, CvType.CV_64F);
-        cameraMatrix.put(0, 0, 1.0, api.getNavCamIntrinsics()[1][1]);
+            // Get lens distortion parameters
+            Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);
+            cameraCoefficients.put(0, 0, api.getNavCamIntrinsics()[1]);
+            cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
 
-        // Get lens distortion parameters
-        Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);
-        cameraCoefficients.put(0, 0, api.getNavCamIntrinsics()[1]);
-        cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
+            // Undistort the image
+            Mat undistortedImage = new Mat();
+            Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
 
-        // Undistort the image
-        Mat undistortedImage = new Mat();
-        Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
-
-        api.saveMatImage(undistortedImage, "_undistorted");
-
+            api.saveMatImage(undistortedImage, "_undistorted");
+        } catch(Exception error){
+            System.out.println("There is an error when undistorting the image.");
+        }
 
     }
 
