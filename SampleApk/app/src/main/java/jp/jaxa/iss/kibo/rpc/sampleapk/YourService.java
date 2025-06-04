@@ -283,8 +283,12 @@ public class YourService extends KiboRpcService {
                         // Get coordinates of the matches
                         for (int y = 0; y < thresholdedResult.rows(); y++){
                             for (int x = 0; y < thresholdedResult.cols(); x++){
-                                if (thresholdedResult.get(y, x)[0] > 0) {
-                                    matches.add(new org.opencv.core.Point(x, y));
+                                try {
+                                    if (thresholdedResult.get(y, x)[0] > 0) {
+                                        matches.add(new org.opencv.core.Point(x, y));
+                                    }
+                                } catch (Exception err) {
+                                    continue;
                                 }
                             }
 
