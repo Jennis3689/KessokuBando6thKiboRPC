@@ -123,7 +123,8 @@ public class YourService extends KiboRpcService {
             Mat area1 = api.getMatNavCam();
             api.saveMatImage(area1, "Area1");
 
-            processImage(area1);
+
+            detectItems(processImage(area1));
 
 //            point = new Point(10.42d, -10.58d, 4.82d);
 //            quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
@@ -182,13 +183,15 @@ public class YourService extends KiboRpcService {
     // You can add your method.
 
 
-    private void processImage(Mat image) {
+    private Mat processImage(Mat image) {
 
+        Log.i(TAG, "Undistorting the image...");
         Dictionary dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
         Mat ids = new Mat();
         ArrayList<Mat> corners = new ArrayList<>();
         Mat cameraMatrix = new Mat(3, 3, CvType.CV_64F);
         Mat cameraCoefficients = new Mat(1, 5, CvType.CV_64F);;
+        Mat undistortedImage = new Mat();
 
         try {
             // Get camera Matrix
@@ -201,7 +204,7 @@ public class YourService extends KiboRpcService {
             cameraCoefficients.convertTo(cameraCoefficients, CvType.CV_64F);
 
             // Undistort the image
-            Mat undistortedImage = new Mat();
+
             Calib3d.undistort(image, undistortedImage, cameraMatrix, cameraCoefficients);
 
             api.saveMatImage(undistortedImage, "_undistorted");
@@ -232,13 +235,15 @@ public class YourService extends KiboRpcService {
         Mat tvecs = new Mat();
 
         Aruco.estimatePoseSingleMarkers(corners, 0.05f, cameraMatrix, cameraCoefficients, rvecs, tvecs);
+        Log.i(TAG, "Returning the undistorted image...");
+        return undistortedImage;
 
 
     }
 
     // image must already be undistorted before running this method!!!!
     private void detectItems(Mat img){
-
+        Log.i(TAG, "Detecting the objects...");
         // Matches for each template
         int templateMatchCnt[] = new int[templates.length];
 
@@ -262,7 +267,7 @@ public class YourService extends KiboRpcService {
             for (int size = widthMin; size <= widthMax; size += changeWidth){
                 for (int angle = 0; angle < 360; angle += changeAngle) {
                     Mat resizedTemp = resizeImg(template, size);
-                    Mat rotResizedTemp = rotateImg(template, angle);
+                    Mat rotResizedTemp = rotateImg(resizedTemp, angle);
 
                     Mat result = new Mat();
                     Imgproc.matchTemplate(targetImage, rotResizedTemp, result, Imgproc.TM_CCOEFF_NORMED);
@@ -288,9 +293,10 @@ public class YourService extends KiboRpcService {
                     }
                 }
 
-                int mostMatchTemplateNum = getMaxIndex(templateMatchCnt);
-                api.setAreaInfo(areaNum, TEMPLATE_NAME[mostMatchTemplateNum], templateMatchCnt[mostMatchTemplateNum]);
+
+
             }
+
 
             //Avoid detecting the same template multiple times
             List<org.opencv.core.Point> filteredMatches = removeDuplicates(matches);
@@ -298,8 +304,11 @@ public class YourService extends KiboRpcService {
 
             // Number of matches for each template
             templateMatchCnt[i] = matchCnt;
+//            int mostMatchTemplateNum = getMaxIndex(templateMatchCnt);
+            api.setAreaInfo(areaNum, TEMPLATE_NAME[i], templateMatchCnt[i]);
 
         }
+
 
 
     }
