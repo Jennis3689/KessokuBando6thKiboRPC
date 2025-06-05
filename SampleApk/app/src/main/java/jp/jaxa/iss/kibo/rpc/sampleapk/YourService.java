@@ -2,6 +2,7 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.GradientDrawable;
 import android.util.Log;
 
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
@@ -10,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.lang.Math;
 
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
@@ -233,9 +234,31 @@ public class YourService extends KiboRpcService {
 
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
+        Mat rot_trans_matrix = new Mat(2, 3, CvType.CV_64FC1);
+
+
 
         Aruco.estimatePoseSingleMarkers(corners, 0.05f, cameraMatrix, cameraCoefficients, rvecs, tvecs);
         Log.i(TAG, "Returning the undistorted image...");
+
+        Calib3d.Rodrigues(rvecs, rvecs);
+        for (int r = 0; r < 2; r++){
+            for (int c = 0; c < 3; c++) {
+                rot_trans_matrix.put(r, c, rvecs.get(r, c));
+            }
+        }
+
+
+        double c = rot_trans_matrix.get(1, 0)[0];
+        double a = rot_trans_matrix.get(0, 0)[0];
+
+        double angle = Math.atan2(c, a);
+
+        // Rotate the image according to the aruco tag.
+        undistortedImage = rotateImg(undistortedImage, Math.toDegrees(angle));
+
+        api.saveMatImage(undistortedImage, "Rotated_Undistorted.png");
+
         return undistortedImage;
 
 
@@ -354,7 +377,7 @@ public class YourService extends KiboRpcService {
         return resizedImg;
     }
 
-    private Mat rotateImg(Mat img, int angle){
+    private Mat rotateImg(Mat img, double angle){
         org.opencv.core.Point center = new org.opencv.core.Point(img.cols() / 2.0, img.rows() / 2.0);
         Mat rotatedMat = Imgproc.getRotationMatrix2D(center, angle, 1.0);
         Mat rotatedImg = new Mat();
