@@ -23,9 +23,13 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.aruco.Dictionary;
 import org.opencv.calib3d.Calib3d;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Range;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgcodecs.Imgcodecs;
 
 
 import static org.opencv.aruco.Aruco.drawDetectedMarkers;
@@ -254,10 +258,51 @@ public class YourService extends KiboRpcService {
 
         double angle = Math.atan2(c, a);
 
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        Mat thresheldImg = new Mat();
+        Mat gray = new Mat();
+        Imgproc.cvtColor(undistortedImage, gray, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.threshold((gray), thresheldImg, 127, 255, Imgproc.THRESH_BINARY);
+        Imgproc.findContours(thresheldImg, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        Rect max = Imgproc.boundingRect(contours.get(0));
+        for (int i = 0; i < contours.size(); i++){
+            Rect rectangle = Imgproc.boundingRect(contours.get(i));
+
+            if (rectangle.area() > max.area()){
+                max = rectangle;
+            }
+        }
+
+        undistortedImage = undistortedImage.submat(max);
+
+        Log.i(TAG, contours.toString());
+
+        // Extend the image frame so none of the image is cut out in rotation.
+        double hypotenuse = Math.sqrt(Math.pow(undistortedImage.cols(), 2) + Math.pow(undistortedImage.rows(), 2));
+        int newImageHeight = (int) Math.ceil(hypotenuse*(Math.sin(angle)));
+
+        Mat resizedUndistortedImage = new Mat(newImageHeight, undistortedImage.cols(), undistortedImage.type());
+
+//        for (int r2 = 0; r2 < undistortedImage.rows(); r2++){
+//            for (int c2 = 0; c2 < undistortedImage.cols(); c2++){
+//                resizedUndistortedImage.put(r2 + (newImageHeight-undistortedImage.rows()), undistortedImage.cols(), undistortedImage.get(r2, c2));
+//            }
+//        }
+//
+//        undistortedImage = resizedUndistortedImage.clone();
+
         // Rotate the image according to the aruco tag.
         undistortedImage = rotateImg(undistortedImage, Math.toDegrees(angle));
 
+
+
+
+
         api.saveMatImage(undistortedImage, "Rotated_Undistorted.png");
+
+
 
         return undistortedImage;
 
