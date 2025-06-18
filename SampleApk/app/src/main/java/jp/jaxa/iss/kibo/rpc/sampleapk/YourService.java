@@ -81,7 +81,7 @@ public class YourService extends KiboRpcService {
 
     // Object Detection
     // similarity threshold
-    private final double threshold = 0.7;
+    private final double threshold = 0.3;
     // duplicates threshold
     private final int length = 10; // Within [length] pixels, only one template image should match.
 
@@ -93,7 +93,7 @@ public class YourService extends KiboRpcService {
 
             // Move to a point.
             areaNum += 1;
-            Point point = new Point(10.9d, -9.92284d, 5.195d);
+            Point point = new Point(11d, -10.18d, 5.2d);
             Quaternion quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
             api.moveTo(point, quaternion, false);
 
@@ -128,8 +128,9 @@ public class YourService extends KiboRpcService {
             Mat area1 = api.getMatNavCam();
             api.saveMatImage(area1, "Area1");
 
-
+            Log.i(TAG, "Running object detection:");
             detectItems(processImage(area1));
+            Log.i(TAG, "Object detection finished:");
 
 //            point = new Point(10.42d, -10.58d, 4.82d);
 //            quaternion = new Quaternion(0f, 0f, -0.707f, 0.707f);
@@ -151,7 +152,7 @@ public class YourService extends KiboRpcService {
 //            /* **************************************************** */
 //
             // When you move to the front of the astronaut, report the rounding completion.
-            point = new Point(11.143d, -6.7607d, 4.9654d);
+            point = new Point(10.9d, -9.92284d, 5.195d);
             quaternion = new Quaternion(0f, 0f, 0.707f, 0.707f);
             api.moveTo(point, quaternion, false);
 
@@ -227,14 +228,9 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "There is an " + error + " error before or at the detect markers method.");
         }
 
-        if (debugging){
-            try {
-                drawMarkers(image, dictionary, corners, ids);
-                Log.i(TAG, "Uploading aruco image for debugging!");
-            } catch(Exception error) {
-                Log.i(TAG, "There is an " + error + " error before or at the draw markers function.");
-            }
-        }
+      if (ids.empty()){
+          return image;
+      }
 
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
@@ -257,44 +253,44 @@ public class YourService extends KiboRpcService {
         double a = rot_trans_matrix.get(0, 0)[0];
 
         double angle = Math.atan2(c, a);
-
-//        List<MatOfPoint> contours = new ArrayList<>();
-//        Mat hierarchy = new Mat();
-//        Mat thresheldImg = new Mat();
-//        Mat gray = new Mat();
-//        Imgproc.cvtColor(undistortedImage, gray, Imgproc.COLOR_BGR2GRAY);
-//        Imgproc.threshold((gray), thresheldImg, 127, 255, Imgproc.THRESH_BINARY);
-//        Imgproc.findContours(thresheldImg, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-//
-//        Rect max = Imgproc.boundingRect(contours.get(0));
-//        for (int i = 0; i < contours.size(); i++){
-//            Rect rectangle = Imgproc.boundingRect(contours.get(i));
-//
-//            if (rectangle.area() > max.area()){
-//                max = rectangle;
-//            }
-//        }
-//
-//        undistortedImage = undistortedImage.submat(max);
-//
-//        Log.i(TAG, contours.toString());
-//
-//        // Extend the image frame so none of the image is cut out in rotation.
-//        double hypotenuse = Math.sqrt(Math.pow(undistortedImage.cols(), 2) + Math.pow(undistortedImage.rows(), 2));
-//        int newImageHeight = (int) Math.ceil(hypotenuse*(Math.sin(angle)));
-//
-//        Mat resizedUndistortedImage = new Mat(newImageHeight, undistortedImage.cols(), undistortedImage.type());
-//
-////        for (int r2 = 0; r2 < undistortedImage.rows(); r2++){
-////            for (int c2 = 0; c2 < undistortedImage.cols(); c2++){
-////                resizedUndistortedImage.put(r2 + (newImageHeight-undistortedImage.rows()), undistortedImage.cols(), undistortedImage.get(r2, c2));
-////            }
-////        }
-////
-////        undistortedImage = resizedUndistortedImage.clone();
-//
-//        // Rotate the image according to the aruco tag.
         undistortedImage = rotateImg(undistortedImage, Math.toDegrees(angle));
+
+        corners = new ArrayList<Mat>();
+        ids = new Mat();
+
+        // Refresh the corners list for the rotated image.
+        Aruco.detectMarkers(undistortedImage, dictionary, corners, ids);
+
+        Mat cornerMat = corners.get(0); // Get the first marker's corners
+        org.opencv.core.Point[] markerCorners = new org.opencv.core.Point[4]; // ArUco has 4 corners
+
+        for (int i = 0; i < 4; i++) {
+            double[] data = cornerMat.get(0, i); // get(row=0, col=i)
+            markerCorners[i] = new org.opencv.core.Point(data[0], data[1]);
+        }
+
+        markerCorners = orderCorners(markerCorners);
+
+        double pixelLength = Math.sqrt(
+                Math.pow(markerCorners[0].x - markerCorners[1].x, 2) +
+                        Math.pow(markerCorners[0].y - markerCorners[1].y, 2)
+        );
+
+        double pixelPerCM = pixelLength / 5;
+        double x1 = -22; // cm relative to the top left corner of the ArUco tag
+        double y1 = 2; // cm
+        double x2 = 7; // cm
+        double y2 = -10; // cm
+        int x1px = (int) (x1 * pixelPerCM); // pixels relative to the top left corner of the ArUco tag
+        int y1px = (int) (y1 * pixelPerCM); // pixels
+        int x2px = (int) (x2 * pixelPerCM); // pixels
+        int y2px = (int) (y2 * pixelPerCM); // pixels
+
+        org.opencv.core.Point startPoint = new org.opencv.core.Point((int) (markerCorners[0].x + x1px), (int) (markerCorners[0].y + y1px));
+        org.opencv.core.Point endPoint = new org.opencv.core.Point((int) (markerCorners[0].x + x2px), (int) (markerCorners[0].y + y2px));
+
+        Rect cropRect = new Rect(startPoint, endPoint);
+        undistortedImage = new Mat(undistortedImage, cropRect);
 
 
 
@@ -327,8 +323,8 @@ public class YourService extends KiboRpcService {
             Mat targetImage = img.clone();
 
             // Parameters for matching the templates
-            int widthMin = 20; //[px]
-            int widthMax = 100; //[px]
+            int widthMin = 50; //[px]
+            int widthMax = 125; //[px]
             int changeWidth = 5; //[px]
             int changeAngle = 45; //[px]
 
@@ -339,24 +335,26 @@ public class YourService extends KiboRpcService {
 
                     Mat result = new Mat();
                     Imgproc.matchTemplate(targetImage, rotResizedTemp, result, Imgproc.TM_CCOEFF_NORMED);
-
+                    Log.i(TAG, result.dump());
                     // Get coordinates with similarity rating and compare them to a threshold.
                     Core.MinMaxLocResult mmlr = Core.minMaxLoc(result);
                     double maxVal = mmlr.maxVal;
+                    Log.i(TAG, String.valueOf(maxVal));
                     if (maxVal >= threshold) {
                         // Extract results greater than or equal to the similarity threshold
                         Mat thresholdedResult = new Mat();
                         Imgproc.threshold(result, thresholdedResult, threshold, 1.0, Imgproc.THRESH_TOZERO);
 
                         // Get coordinates of the matches
+                        Log.i(TAG, thresholdedResult.dump());
                         for (int y = 0; y < thresholdedResult.rows(); y++){
-                            for (int x = 0; y < thresholdedResult.cols(); x++){
+                            for (int x = 0; x < thresholdedResult.cols(); x++){
                                 try {
                                     if (thresholdedResult.get(y, x)[0] > 0) {
                                         matches.add(new org.opencv.core.Point(x, y));
                                     }
                                 } catch (Exception err) {
-                                    continue;
+
                                 }
                             }
 
@@ -422,13 +420,29 @@ public class YourService extends KiboRpcService {
         return resizedImg;
     }
 
-    private Mat rotateImg(Mat img, double angle){
-        org.opencv.core.Point center = new org.opencv.core.Point(img.cols() / 2.0, img.rows() / 2.0);
-        Mat rotatedMat = Imgproc.getRotationMatrix2D(center, angle, 1.0);
-        Mat rotatedImg = new Mat();
-        Imgproc.warpAffine(img, rotatedImg, rotatedMat, img.size());
+    private Mat rotateImg(Mat src, double angle) {
+        // Get the center of the image
+        org.opencv.core.Point center = new org.opencv.core.Point(src.cols() / 2.0, src.rows() / 2.0);
 
-        return rotatedImg;
+        // Compute rotation matrix
+        Mat rotationMat = Imgproc.getRotationMatrix2D(center, angle, 1.0);
+
+        // Compute the bounding box of the rotated image
+        double absCos = Math.abs(rotationMat.get(0, 0)[0]);
+        double absSin = Math.abs(rotationMat.get(0, 1)[0]);
+
+        int newWidth = (int) (src.height() * absSin + src.width() * absCos);
+        int newHeight = (int) (src.height() * absCos + src.width() * absSin);
+
+        // Adjust rotation matrix to move the image center to the new bounding box center
+        rotationMat.put(0, 2, rotationMat.get(0, 2)[0] + newWidth / 2.0 - center.x);
+        rotationMat.put(1, 2, rotationMat.get(1, 2)[0] + newHeight / 2.0 - center.y);
+
+        // Perform the actual rotation
+        Mat rotated = new Mat();
+        Imgproc.warpAffine(src, rotated, rotationMat, new Size(newWidth, newHeight), Imgproc.INTER_LINEAR, Core.BORDER_CONSTANT, Scalar.all(0));
+
+        return rotated;
     }
 
     private int getMaxIndex(int[] array) {
@@ -449,6 +463,40 @@ public class YourService extends KiboRpcService {
         Mat arImage = img.clone();
         drawDetectedMarkers(arImage, corners, ids, new Scalar(0, 0, 255));
         api.saveMatImage(arImage, "area" + areaNum + ".png");
+    }
+    private org.opencv.core.Point[] orderCorners(org.opencv.core.Point[] pts) {
+        org.opencv.core.Point[] ordered = new org.opencv.core.Point[4];
+
+        // Sum and diff of points
+        double[] sums = new double[4];
+        double[] diffs = new double[4];
+
+        for (int i = 0; i < 4; i++) {
+            sums[i] = pts[i].x + pts[i].y;
+            diffs[i] = pts[i].y - pts[i].x;
+        }
+
+        // Top-left = min sum
+        // Bottom-right = max sum
+        // Top-right = min diff
+        // Bottom-left = max diff
+        ordered[0] = pts[minIndex(sums)]; // top-left
+        ordered[2] = pts[maxIndex(sums)]; // bottom-right
+        ordered[1] = pts[minIndex(diffs)]; // top-right
+        ordered[3] = pts[maxIndex(diffs)]; // bottom-left
+
+        return ordered;
+    }
+    private int minIndex(double[] arr) {
+        int idx = 0;
+        for (int i = 1; i < arr.length; i++) if (arr[i] < arr[idx]) idx = i;
+        return idx;
+    }
+
+    private int maxIndex(double[] arr) {
+        int idx = 0;
+        for (int i = 1; i < arr.length; i++) if (arr[i] > arr[idx]) idx = i;
+        return idx;
     }
 
 }
